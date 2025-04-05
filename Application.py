@@ -388,7 +388,7 @@ def process_file():
         if alg_selected.get() == "WebP":
             output_file = os.path.splitext(file_path)[0] + "_compressed.webp"
             image = Image.open(file_path)
-            image.save(output_file, "WebP", losless=True)
+            image.save(output_file, "WebP", lossless=True)
 
         if alg_selected.get() == "Huffman":
             _, ext = os.path.splitext(file_path)
