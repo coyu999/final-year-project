@@ -71,7 +71,7 @@ input_bitdepth = tk.StringVar(value="None")
 input_dpi = tk.IntVar(value=0)
 # File extensions
 text_ext = {"docx", "txt", "pdf", "log"}
-image_ext = {"jpg", "jpeg", "png", "webp"}
+image_ext = {"jpg", "gif", "png", "webp"}
 video_ext = {"mp4", "mov", "avi", "mkv"}
 # File extension buttons
 file_type_buttons = {
