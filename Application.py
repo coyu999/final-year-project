@@ -70,9 +70,9 @@ input_framerate = tk.IntVar(value=0)
 input_bitdepth = tk.StringVar(value="None")
 input_dpi = tk.IntVar(value=0)
 # File extensions
-text_ext = {"docx", "txt", "text", "pdf", "doc", "log", "html"}
-image_ext = {"jpg", "jpeg", "png", "tiff", "bmp", "webp", "gif"}
-video_ext = {"mp4", "mov", "avi", "wmv", "webm", "flv", "mkv"}
+text_ext = {"docx", "txt", "pdf", "log"}
+image_ext = {"jpg", "jpeg", "png", "webp"}
+video_ext = {"mp4", "mov", "avi", "mkv"}
 # File extension buttons
 file_type_buttons = {
     "text": ["Huffman", "Lempel-Ziv"],
