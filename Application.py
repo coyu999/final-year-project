@@ -7,7 +7,20 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import heapq
 import struct
+import time
 
+# Timer Start
+def start_timer():
+    global start_time
+    start_time = time.perf_counter()
+    
+def stop_timer():
+    if start_time is not None:
+        elapsed = time.perf_counter() - start_time
+        print(f"Time to compress: {elapsed:.2f} seconds")
+        status_label.config(text=f"Time to compress: {elapsed:.2f} seconds")
+        status_label.after(5000, lambda: status_label.config(text="File Loaded"))
+        
 # Node class for text document compression
 class Node:
     def __init__(self, char, freq):
@@ -18,7 +31,7 @@ class Node:
 
     def __lt__(self, other):
         return self.freq < other.freq
-         
+
 # Create the foundation for window
 root = tk.Tk()
 root.title("Data Compression Program")
@@ -70,9 +83,9 @@ input_framerate = tk.IntVar(value=0)
 input_bitdepth = tk.StringVar(value="None")
 input_dpi = tk.IntVar(value=0)
 # File extensions
-text_ext = {"docx", "txt", "pdf", "log"}
-image_ext = {"jpg", "gif", "png", "webp"}
-video_ext = {"mp4", "mov", "avi", "mkv"}
+text_ext = {"docx", "txt", "doc"}
+image_ext = {"jpg", "png", "webp"}
+video_ext = {"mp4", "mov", "avi"}
 # File extension buttons
 file_type_buttons = {
     "text": ["Huffman", "Lempel-Ziv"],
@@ -333,13 +346,16 @@ def algorithm_click(button_text, button):
 
 # Function for the compression process
 def process_file():
+    start_timer()
+    _, ext = os.path.splitext(file_path)
+    ext = ext.lower().strip(".")
     if selected_file_type.get() == "compressed_huff":
         decompress_huffman(file_path)
     if selected_file_type.get() == "compressed_lz77":
         decompress_lz77(file_path)
     else:
         if alg_selected.get() == "H.264":
-            output_file = os.path.splitext(file_path)[0] + "_compressed.mp4"
+            output_file = os.path.splitext(file_path)[0] + "_compressed_" + alg_selected.get() + "." + ext
             command = [
                 "ffmpeg",
                 "-i", file_path,  
@@ -351,7 +367,7 @@ def process_file():
             subprocess.run(command)
         
         if alg_selected.get() == "H.265":
-            output_file = os.path.splitext(file_path)[0] + "_compressed.mp4"
+            output_file = os.path.splitext(file_path)[0] + "_compressed_" + alg_selected.get() + "." + ext
             command = [
                 "ffmpeg",
                 "-i", file_path,  
@@ -363,12 +379,11 @@ def process_file():
             subprocess.run(command)
         
         if alg_selected.get() == "VP9":
-            output_file = os.path.splitext(file_path)[0] + "_compressed.mp4"
+            output_file = os.path.splitext(file_path)[0] + "_compressed_" + alg_selected.get() + ".mp4"
             command = [
                 "ffmpeg",
                 "-i", file_path,  
                 "-c:v", "libvpx-vp9", 
-                "-b:v", "10M",
                 "-preset", "fast", 
                 "-crf", "23",      
                 output_file        
@@ -376,23 +391,21 @@ def process_file():
             subprocess.run(command)
 
         if alg_selected.get() == "JPEG":
-            output_file = os.path.splitext(file_path)[0] + "_compressed.jpg"
+            output_file = os.path.splitext(file_path)[0] + "_compressed_" + alg_selected.get() + ".jpg"
             image = Image.open(file_path)
             image.save(output_file, "JPEG", quality=75)
         
         if alg_selected.get() == "PNG":
-            output_file = os.path.splitext(file_path)[0] + "_compressed.png"
+            output_file = os.path.splitext(file_path)[0] + "_compressed_" + alg_selected.get() + ".png"
             image = Image.open(file_path)
             image.save(output_file, "PNG", compress_level=6)
 
         if alg_selected.get() == "WebP":
-            output_file = os.path.splitext(file_path)[0] + "_compressed.webp"
+            output_file = os.path.splitext(file_path)[0] + "_compressed_" + alg_selected.get() + ".webp"
             image = Image.open(file_path)
             image.save(output_file, "WebP", lossless=True)
 
         if alg_selected.get() == "Huffman":
-            _, ext = os.path.splitext(file_path)
-            ext = ext.lower().strip(".")
             """ Read the bytes of the document """
             with open(file_path, 'rb') as file:
                 data = file.read()
@@ -455,6 +468,7 @@ def process_file():
                 file.write(byte_array)
             
             """ Indicate compression end """
+            stop_timer()
             compress_button.config(text="Done...")
             file_properties(middle_section_3, output_file)
             compress_section.after(3000, lambda: compress_button.config(text="Compress"))
@@ -465,7 +479,6 @@ def process_file():
             """ Read the bytes of the document """
             with open(file_path, 'rb') as f:
                 data = f.read()
-
             i = 0
             compressed = []
             window_size = 4096
@@ -473,7 +486,6 @@ def process_file():
 
             while i < len(data):
                 match_heap = []
-                end_of_buffer = min(i + lookahead_size, len(data))
 
                 """ Find the longest matching patterns """
                 for j in range(max(0, i - window_size), i):
@@ -483,7 +495,7 @@ def process_file():
 
                     if length > 0:
                         heapq.heappush(match_heap, (-length, j))
-
+                """ Find matching triplets """
                 if match_heap:
                     best_match = heapq.heappop(match_heap)
                     length = -best_match[0]
@@ -503,6 +515,7 @@ def process_file():
                 for offset, length, next_char in compressed:
                     f.write(struct.pack('>HBB', offset, length, next_char if next_char is not None else 0))
         """ Indicate compression end """
+        stop_timer()
         compress_button.config(text="Done...")
         file_properties(middle_section_3, output_file)
         compress_section.after(3000, lambda: compress_button.config(text="Compress"))
@@ -546,6 +559,7 @@ def decompress_lz77(file_path):
         f.write(decompressed_data)
 
     """ Indicate decompression end """
+    stop_timer()
     file_properties(middle_section_3, output_file)
     compress_button.config(text="Done...")
     compress_section.after(3000, lambda: compress_button.config(text="Decompress" if selected_file_type.get() == "compressed" else "Compress"))
@@ -609,6 +623,7 @@ def decompress_huffman(file_path):
         file.write(bytes(decoded_data))
 
     """ Indicate decompression end """
+    stop_timer()
     file_properties(middle_section_3, output_file)
     compress_button.config(text="Done...")
     compress_section.after(3000, lambda: compress_button.config(text="Decompress" if selected_file_type.get() == "compressed" else "Compress"))
